@@ -16,6 +16,14 @@ class LoadingState extends Phaser.State {
 		loadingText.anchor.setTo(0.5);
 
     game.load.setPreloadSprite(loadingBar);
+
+
+
+				game.load.tilemap('tileMap', 'assets/tilemap/Tilemap_Master.json', null, Phaser.Tilemap.TILED_JSON);
+		    game.load.image("tiles", "assets/tilemap/TileSet_Master.png");
+		    game.load.spritesheet('playerSpriteSheet', 'assets/sprites/player_bounds.png', 64, 64);
+		    game.load.image('freezeBullet', 'assets/sprites/freeze_bullet.png', 32, 6);
+		    game.load.image('enemy_normal', 'assets/sprites/enemy_normal.png', 64, 64);
   }
 
   create() {
@@ -24,7 +32,7 @@ class LoadingState extends Phaser.State {
 	}
 
 	nextState() {
-		this.state.start("TitleState")
+		this.state.start("GameState")
 	}
 }
 

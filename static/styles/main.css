@@ -9,7 +9,23 @@ body {
   height: inherit;
   width: inherit;
   margin: 0px;
-  display: flex;
+  /* display: flex; */
   justify-content: center;
   align-items: center;
+}
+
+#content {
+  margin: 8px;
+}
+
+.command {
+  font-weight: bold;
+}
+
+.bugs {
+  color: red;
+}
+
+.hints {
+  color: green;
 }

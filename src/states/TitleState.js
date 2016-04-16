@@ -21,7 +21,7 @@ class TitleState extends Phaser.State {
   }
 
   startGame() {
-    game.state.start("StageState");
+    game.state.start("GameState");
   }
 
   startOver() {
