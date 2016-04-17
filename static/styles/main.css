@@ -16,6 +16,8 @@ body {
 
 #content {
   margin: 8px;
+  max-width: 1280px;
+  max-height: 720px;
 }
 
 .command {
