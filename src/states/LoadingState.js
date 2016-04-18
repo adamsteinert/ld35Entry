@@ -19,10 +19,16 @@ class LoadingState extends Phaser.State {
 
 		game.load.tilemap('tileMap', 'assets/tilemap/Tilemap_Master.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image("tiles", "assets/tilemap/TileSet_Master.png");
-    game.load.spritesheet('playerSpriteSheet', 'assets/sprites/player_bounds.png', 64, 64);
+
+		game.load.spritesheet('playerSpriteSheet', 'assets/sprites/player_bounds.png', 64, 64);
+
+
     game.load.image('freezeBullet', 'assets/sprites/freeze_bullet.png', 32, 6);
-    game.load.image('enemy_normal', 'assets/sprites/enemy_normal.png', 32, 32);
 		game.load.image("crown","assets/sprites/crown.png")
+
+		game.load.image('enemy_normal', 'assets/sprites/enemy_normal.png', 32, 32);
+		game.load.image('enemy_green', 'assets/sprites/enemy_green.png', 32, 32);
+		game.load.image('enemy_blue', 'assets/sprites/enemy_blue.png', 32, 32);
 
 		game.load.audio('coin', 'assets/sound/fx/coin2.mp3');
 		game.load.audio('explode', 'assets/sound/fx/explosion1.mp3');
@@ -30,7 +36,6 @@ class LoadingState extends Phaser.State {
 		game.load.audio('jump', 'assets/sound/fx/jump1.mp3');
 		game.load.audio('mutate', 'assets/sound/fx/mutate3.mp3');
 		game.load.audio('win', 'assets/sound/fx/youWin.mp3');
-		game.load.audio('lose', 'assets/sound/fx/finalDead.mp3');
 		game.load.audio('lose', 'assets/sound/fx/finalDead.mp3');
 		game.load.audio('music', 'assets/sound/threeBody.mp3');
 

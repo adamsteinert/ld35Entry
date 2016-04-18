@@ -10,6 +10,7 @@ let bulletTime = 0;
 let spawnTimer = 0;
 let spawnPoints = [];
 let teleporters = [];
+let enemyClass = ["enemy_normal", "enemy_green", "enemy_blue"]
 let enemyNormalGroup;
 let tileWidth = 32
 let tileHeight = 32
@@ -18,6 +19,7 @@ let crowns = [];
 let enemyRandomShift = false
 let enemyDirectionShiftProbability = .005
 let shesDeadJim = false
+
 
 let sounds = {}
 let soundsLoaded = false
@@ -30,24 +32,32 @@ class GameState extends Phaser.State {
 
   onShapeShift() {
     let p = this.player
-    if(p.frame === 0)
+
+    if(p.eClass === "enemy_blue")
     {
-      //stick
-      p.frame = 6
+      // TO GREEN STATE
+      p.eClass = "enemy_green"
+      p.animations.play('green', 6, true)
+      p.reset(p.x, p.y-16)
       p.body.setSize(26, 61, 0, 0)
-      p.angle -= 90
+      //p.body.setSize(24, 64, 0, 0)
+      p.angle = 90
     }
-    else if(p.frame === 6)
+    else if(p.eClass === "enemy_green")
     {
-      p.frame = 13
-      p.body.setSize(53, 63, 6, 0)
-      p.y -= 39
-      p.angle += 90
+      // TO NORMAL STATE
+      p.eClass = "enemy_normal"
+      p.animations.play('normal', 6, true)
+      p.body.setSize(32, 64, 0, 0)
+      //p.y -= 39
+      p.angle = 0
     }
     else {
-      // squid
-      p.frame = 0
-      p.body.setSize(61, 24, 2, 0)
+      // TO BLUE STATE
+      p.eClass = "enemy_blue"
+      p.animations.play('blue', 6, true)
+      p.body.setSize(60, 21, 0, 0)
+      p.angle = 0
     }
   }
 
@@ -70,7 +80,11 @@ class GameState extends Phaser.State {
   }
 
   createEnemy(x, y) {
-    let enemy = enemyNormalGroup.create(x, y, 'enemy_normal');
+    let eClass = enemyClass[util.getRandomInt(0,2)]
+
+    let enemy = enemyNormalGroup.create(x, y, eClass);
+    enemy.eClass = eClass;
+
     //enemy.anchor.setTo(0.5, 0.5);
     enemy.body.collideWorldBounds = true;
     enemy.body.bounce.y = 0.8;
@@ -93,7 +107,6 @@ class GameState extends Phaser.State {
     crowns.forEach(function(tile) {
       let c = crownGroup.create(tile.worldX, tile.worldY, "crown")
       c.body.allowGravity = false
-      //c.anchor.setTo(0.5, 0.5);
     });
   }
 
@@ -112,24 +125,26 @@ class GameState extends Phaser.State {
     let state = this
     enemies.forEach(function(enemy) {
       let pChange = Math.random()
-      //let x = enemy.x / tileWidth
-      //let y = enemy.y / tileHeight
-      //util.trace(x + " " + y)
 
       let tile = state.map.getTileWorldXY(enemy.x, enemy.y, tileWidth, tileHeight, "hotspots", true);
       if(tile && tile.properties["teleport"]) {
         let index = util.getRandomInt(0, spawnPoints.length-1)
         let point = spawnPoints[index];
-        enemy.x = point.worldX
-        enemy.y = point.worldY
+        enemy.reset(point.worldX, point.worldY)
       }
 
-
-      if(enemyRandomShift && pChange < enemyDirectionShiftProbability)
+      if(enemyRandomShift && pChange < enemyDirectionShiftProbability) {
         enemy.body.velocity.x = enemy.defaultX *= -1
+      }
 
-      if(enemy.body.blocked.left || enemy.body.blocked.right)
+      if(enemy.body.blocked.left || enemy.body.blocked.right) {
         enemy.body.velocity.x = enemy.defaultX *= -1
+      }
+
+      if(enemy.body.velocity.x < 0)
+        enemy.rotation -= 0.5
+      else
+        enemy.rotation += 0.5
     });
   }
 
@@ -161,7 +176,19 @@ class GameState extends Phaser.State {
     }
   }
 
+  toggleMusic() {
+    sounds["music"].mute = !sounds["music"].mute
+  }
+
 	create() {
+    playerScore = 0;
+    bulletTime = 0;
+    spawnTimer = 0;
+    spawnPoints = [];
+    teleporters = [];
+    crowns = [];
+    shesDeadJim = false
+
     this.touching = false;
     game.time.advancedTiming = true;
 		util.trace('StageState::create')
@@ -177,9 +204,13 @@ class GameState extends Phaser.State {
     // CONTROLS
     this.cursor = game.input.keyboard.createCursorKeys();
     this.S = this.game.input.keyboard.addKey(Phaser.Keyboard.S);
-    this.S.onDown.add(this.onShapeShift, this);
+    this.S.onDown.add(function() { this.onShapeShift(1) }, this);
+    this.A = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
+    this.A.onDown.add(function() { this.onShapeShift(0) }, this);
+    this.V = this.game.input.keyboard.addKey(Phaser.Keyboard.V);
+    this.V.onDown.add(this.toggleMusic, this);
+
     fireButton = game.input.keyboard.addKey(Phaser.Keyboard.F);
-    //game.input.keyboard.addKeyCapture(Phaser.Keyboard.F);
 
     //TILES
     //the first parameter is the tileset name as specified in Tiled, the second is the key to the asset
@@ -187,15 +218,15 @@ class GameState extends Phaser.State {
 		this.map.addTilesetImage('MasterTileset', 'tiles');
     this.blockedLayer = this.map.createLayer("TileArea")
     this.waterLayer = this.map.createLayer("WaterLayer")
-    this.hotspots = this.map.createLayer("hotspots")
-    //this.crowns = this.map.createLayer("crowns")
+
+    // Toggle to debug spawns/teleports.
+    //this.hotspots = this.map.createLayer("hotspots")
     this.waterLayer.alpha = 0.3
 
     // TILE COLLISION
 		this.map.setCollisionBetween(15,20, true, "TileArea");
     this.map.setCollisionBetween(25,30, true, "TileArea");
     this.map.setCollision([2,5], true, "TileArea")
-    //this.map.setCollision(33, true, "crowns")
 
 
     // CREATE SPAWN POINTS
@@ -225,7 +256,10 @@ class GameState extends Phaser.State {
 		this.player.body.collideWorldBounds = true;
     this.player.body.bounce.y = 0.2;
     this.player.body.gravity.y = 400;
-
+    this.player.animations.add('blue', [0,1,2,3,4,5,4,3,2,1], true);
+    this.player.animations.add('green', [6,7,8,9,10,11,10,9,8,7], true);
+    this.player.animations.add('normal', [12,13,14,15,16,17,16,15,14,13], true);
+    this.player.eClass = "enemy_green"
     this.onShapeShift()
 
     this.createBullets()
@@ -262,18 +296,19 @@ nextState() {
     let p = this.player;
     let cursor = this.cursor;
 
-    this.updateScore();
-
     // COLLISIONS
+    game.physics.arcade.collide(this.player, enemyNormalGroup, this.endGame, null, this);
     game.physics.arcade.collide(this.player, this.blockedLayer);
     game.physics.arcade.collide(enemyNormalGroup, this.blockedLayer);
-    game.physics.arcade.collide(this.player, enemyNormalGroup, this.endGame, null, this);
-    game.physics.arcade.collide(bullets, this.blockedLayer, this.bulletToTileCollision, null, this);
+
     game.physics.arcade.collide(this.player, crownGroup, this.playerToCrownCollision, null, this);
     game.physics.arcade.collide(bullets, enemyNormalGroup, this.bulletToEnemyCollision, null, this);
+    game.physics.arcade.collide(bullets, this.blockedLayer, this.bulletToTileCollision, null, this);
+
+    this.updateScore();
 
     p.isClimbing = false;
-    if(p.frame === 6 && (p.body.blocked.left || p.body.blocked.right)) {
+    if(p.eClass === "enemy_green" && (p.body.blocked.left || p.body.blocked.right)) {
       p.body.allowGravity = false
       p.isClimbing = true;
     }
@@ -326,6 +361,7 @@ nextState() {
 
 
     fireBullet() {
+
       //  To avoid them being allowed to fire too fast we set a time limit
       if (game.time.now > bulletTime)
       {
@@ -336,7 +372,6 @@ nextState() {
 
           if (bullet)
           {
-              //  And fire it
               bullet.reset(p.x, p.y );
 
               if(p.isClimbing) {
@@ -354,19 +389,16 @@ nextState() {
 
 
       endGame(player, enemy) {
-          if(shesDeadJim)
-            return;
-
+        if(!shesDeadJim) {
           sounds["music"].stop()
           this.playSound("lose")
           let cam = game.camera;
-          shesDeadJim = true;
           let style = { font: "32px Arial", fill: "#ff0044", align: "center"};
           let text = game.add.text(cam.x + 200, cam.y + 200, "- She's dead, Jim. -\r\nRestarting...", style);
           text.anchor.set(0.5);
-
           game.time.events.add(Phaser.Timer.SECOND * 3, this.nextState, this);
-
+          shesDeadJim = true;
+        }
       }
 
   bulletToTileCollision(bullet, tile) {
@@ -375,8 +407,11 @@ nextState() {
 
   bulletToEnemyCollision(bullet, enemy) {
     bullet.kill()
-    enemy.destroy()
-    playerScore += 20
+    // Only get a kill agains the same enemy type.
+    if(enemy.eClass === this.player.eClass) {
+      enemy.destroy()
+      playerScore += 20
+    }
   }
 
   playerToCrownCollision(player, crown) {
